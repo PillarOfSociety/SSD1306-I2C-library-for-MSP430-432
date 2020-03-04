@@ -1,8 +1,12 @@
+
+#if defined (__msp432p4xx__)        //untested
+
 #include "ti/devices/msp432p4xx/inc/msp.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include "ssd1306_lib.h"
+#include "msp432_ssd1306_Example.h"
 
 char printNum[80];
 unsigned char num = 5;
@@ -18,7 +22,7 @@ const unsigned char ti_logo[] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x07, 0x07, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-int main(void) {
+int msp432Example(void) {
     volatile uint32_t i;
 
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
@@ -44,3 +48,4 @@ int main(void) {
     }
 
 }
+#endif

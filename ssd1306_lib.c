@@ -1,4 +1,13 @@
-#include "ti/devices/msp432p4xx/inc/msp.h"
+/*Origonal code from here:
+ * https://github.com/boykod/SSD1306-I2C-library-for-MSP430-432
+ *
+ * Fork 3-3-20
+ * AJS
+ * Rev  2.0
+ */
+
+//#include "ti/devices/msp432p4xx/inc/msp.h"
+#include <msp430.h> //this should cover all MSP430s
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -6,7 +15,7 @@
 #include "font6x8.h"
 #include "font12x16.h"
 #include "ssd1306_lib.h"
-#include "ssd1306_i2c_lib.h"
+#include "430_i2c_lib/ssd1306_i2c_lib.h"    //use MSP430 version
 
 volatile uint32_t i;
 unsigned char data [2];

@@ -1,5 +1,12 @@
+/*
+ * AJS 2-21-20
+ * Origonal code from SSD1306-I2C-library-for-MSP430-432 github
+ *
+ * Handles low level I2C stuff for interfacing with Screen
+ */
+
 //******************************************************************************************************************************************
-//                 MSP430FR2433
+//                 MSP430FR5994
 //             -----------------
 //         /|\|              XIN|-
 //          | |                 |
@@ -7,75 +14,121 @@
 //            |                 |
 //            |                 |
 //            |                 |
-//            |         SDA/P1.2|------->
-//            |         SCK/P1.3|------->
+//            |         SDA/P7.0|------->  //was P1.2
+//            |         SCK/P7.1|------->   //was P1.3
 //******************************************************************************************************************************************
+
 #include <msp430.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include "ssd1306_i2c_lib.h"
 
-volatile uint32_t i;
-uint8_t SlaveAddress = 0x3C;
+#define SLAVE_ADDRESS   0x3C    //uint8_t SlaveAddress = 0x3C;
+
 uint8_t TXByteCtr;
-uint8_t SlaveFlag = 0;
-unsigned char data [2];
 unsigned char *TI_transmit_field;
-unsigned char *dataBuffer;
 
 //******************************************************************************************************************************************
 void i2c_init () {
-    P1OUT &= ~BIT3;
-    P1DIR|=BIT2 | BIT3;
+    // Configure GPIO
+    P7SEL0 |= BIT0 | BIT1;  //Change pins from origonal github
+    P7SEL1 &= ~(BIT0 | BIT1);
 
-    // Configure Pins for I2C
-    P1SEL0 |= BIT2 | BIT3;                            // I2C pins
-
-    // Disable the GPIO power-on default high-impedance mode
-    // to activate previously configured port settings
+    // Disable the GPIO power-on default high-impedance mode to activate
+    // previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
 
-    // Configure USCI_B0 for I2C mode
-    UCB0CTLW0 |= UCSWRST;                             // put eUSCI_B in reset state
-    UCB0CTLW0 |= UCMODE_3 | UCMST;                    // I2C master mode, SMCLK
-    UCB0BRW = 0x8;                                    // baudrate = SMCLK / 8
-    UCB0CTLW0 &=~ UCSWRST;                            // clear reset register
-    UCB0IE |= UCTXIE0 | UCNACKIE;                     // transmit and NACK interrupt enable
-
+    // Configure USCI_B2 for I2C mode
+    UCB2CTLW0 = UCSWRST;                    // put eUSCI_B in reset state
+    UCB2CTLW0 |= UCMODE_3 | UCMST | UCSSEL__SMCLK; // I2C master mode, SMCLK
+    UCB2BRW = 0x8;                          // baudrate = SMCLK / 8
+    UCB2CTLW0 &= ~UCSWRST;                  // clear reset register
+    UCB2IE |= UCTXIE0 | UCNACKIE;           // transmit and NACK interrupt enable
     __enable_interrupt();
 }
 //******************************************************************************************************************************************
 void i2c_transmit (unsigned char *params, unsigned char flag) {
 
-    TI_transmit_field = params;
+    __delay_cycles(1000);               // Delay between transmissions  //TODO move this elsewhere
+    UCB2I2CSA = SLAVE_ADDRESS;// configure slave address
+    TXByteCtr = flag;                      // Load TX byte counter
+    while (UCB2CTLW0 & UCTXSTP);        // Ensure stop condition got sent
 
-    __delay_cycles(5000);
-    UCB0I2CSA = SlaveAddress;              // configure slave address
-    TXByteCtr = flag;                                    // Load TX byte counter
-    while (UCB0CTLW0 & UCTXSTP);                      // Ensure stop condition got sent
-    UCB0CTLW0 |= UCTR | UCTXSTT;                      // I2C TX, start condition
+    UCB2CTLW0 |= UCTR | UCTXSTT;        // I2C TX, start condition
 
-    __delay_cycles(2500);
+    __bis_SR_register(LPM0_bits | GIE); // Enter LPM0 w/ interrupts
 
 }
 //******************************************************************************************************************************************
 // I2C interrupt service routine
-#pragma vector = USCI_B0_VECTOR
-__interrupt void USCIB0_ISR(void) {
-  switch(__even_in_range(UCB0IV,USCI_I2C_UCBIT9IFG)) {
+
+#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
+#pragma vector = EUSCI_B2_VECTOR
+__interrupt void USCI_B2_ISR(void)
+#elif defined(__GNUC__)
+void __attribute__ ((interrupt(EUSCI_B2_VECTOR))) USCI_B2_ISR (void)
+#else
+#error Compiler not supported!
+#endif
+{
+    switch(__even_in_range(UCB2IV, USCI_I2C_UCBIT9IFG))
+       {
+           case USCI_NONE:          break;     // Vector 0: No interrupts
+           case USCI_I2C_UCALIFG:   break;     // Vector 2: ALIFG
+           case USCI_I2C_UCNACKIFG:            // Vector 4: NACKIFG
+               //UCB2CTL1 |= UCTXSTT;            // I2C start condition
+               UCB2CTLW0 |= UCTXSTT;           // resend start if NACK
+               break;
+           case USCI_I2C_UCSTTIFG:  break;     // Vector 6: STTIFG
+           case USCI_I2C_UCSTPIFG:  break;     // Vector 8: STPIFG
+           case USCI_I2C_UCRXIFG3:  break;     // Vector 10: RXIFG3
+           case USCI_I2C_UCTXIFG3:  break;     // Vector 12: TXIFG3
+           case USCI_I2C_UCRXIFG2:  break;     // Vector 14: RXIFG2
+           case USCI_I2C_UCTXIFG2:  break;     // Vector 16: TXIFG2
+           case USCI_I2C_UCRXIFG1:  break;     // Vector 18: RXIFG1
+           case USCI_I2C_UCTXIFG1:  break;     // Vector 20: TXIFG1
+           case USCI_I2C_UCRXIFG0:             // Vector 22: RXIFG0
+               //RXData = UCB2RXBUF;             // Get RX data
+               //__bic_SR_register_on_exit(LPM0_bits); // Exit LPM0
+               break;
+           case USCI_I2C_UCTXIFG0:      // Vector 24: TXIFG0
+               if (TXByteCtr)                  // Check TX byte counter
+               {
+                   UCB2TXBUF = *TI_transmit_field;//TXData[SlaveFlag];  // Load TX buffer
+                   TI_transmit_field++;
+                   TXByteCtr--;                // Decrement TX byte counter
+               }
+               else
+               {
+                   UCB2CTLW0 |= UCTXSTP;       // I2C stop condition
+                   UCB2IFG &= ~UCTXIFG;        // Clear USCI_B2 TX int flag
+                   __bic_SR_register_on_exit(LPM0_bits); // Exit LPM0
+               }
+               break;
+           case USCI_I2C_UCBCNTIFG:            // Vector 26: BCNTIFG
+               P1OUT ^= BIT0;                  // Toggle LED on P1.0
+               break;
+           case USCI_I2C_UCCLTOIFG: break;     // Vector 28: clock low timeout
+           case USCI_I2C_UCBIT9IFG: break;     // Vector 30: 9th bit
+           default: break;
+       }
+
+    /* origonal to github
+  switch(__even_in_range(UCB2IV,USCI_I2C_UCBIT9IFG)) {
   case USCI_I2C_UCNACKIFG:
-      UCB0CTL1 |= UCTXSTT;                      //resend start if NACK
+      UCB2CTL1 |= UCTXSTT;                      //resend start if NACK
       break;                                      // Vector 4: NACKIFG break;
   case USCI_I2C_UCTXIFG0:
       if (TXByteCtr)  {                              // Check TX byte counter
-          UCB0TXBUF = *TI_transmit_field;
+          UCB2TXBUF = *TI_transmit_field;
           TI_transmit_field++;
           TXByteCtr--;                              // Decrement TX byte counter
       } else {
-          UCB0CTLW0 |= UCTXSTP;                     // I2C stop condition
-          UCB0IFG &= ~UCTXIFG;                      // Clear USCI_B0 TX int flag
+          UCB2CTLW0 |= UCTXSTP;                     // I2C stop condition
+          UCB2IFG &= ~UCTXIFG;                      // Clear USCI_B0 TX int flag
       }
       break;                                      // Vector 26: TXIFG0 break;
-  }
+
+  }*/
 }

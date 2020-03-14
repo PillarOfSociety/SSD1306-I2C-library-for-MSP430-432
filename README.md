@@ -10,4 +10,4 @@
 
 *Using CCS 9.3
 
-![MSP-EXP430FR5994 With SSD1306](images/MSP430.jpg)
+![MSP-EXP430FR5994 With SSD1306](https://github.com/asimon342/SSD1306-I2C-library-for-MSP430-432/blob/master/images/MSP430.JPG)

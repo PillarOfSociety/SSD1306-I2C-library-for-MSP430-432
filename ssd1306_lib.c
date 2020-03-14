@@ -1,10 +1,11 @@
-/*Origonal code from here:
+/*********************************************************************************************
+ * Origonal code from here:
  * https://github.com/boykod/SSD1306-I2C-library-for-MSP430-432
  *
  * Fork 3-3-20
  * AJS
  * Rev  2.0
- */
+ ********************************************************************************************/
 
 //#include "ti/devices/msp432p4xx/inc/msp.h"
 #include <msp430.h> //this should cover all MSP430s
@@ -22,8 +23,13 @@ unsigned char data [2];
 unsigned char *TI_transmit_field;
 unsigned char *dataBuffer;
 
+
+
 //******************************************************************************************************************************************
-void ssd1306Init() {
+void ssd1306Init(void) {
+
+    //i2c_init(); //setup hardware interface
+
     sendCommand(SSD1306_DISPLAY_OFF);                                   /* Entire Display OFF */
     sendCommand(SSD1306_SET_DISPLAY_CLOCK_DIV);                         /* Set Display Clock Divide Ratio and Oscillator Frequency */
     sendCommand(0x80);                                                  /* Default Setting for Display Clock Divide Ratio and Oscillator Frequency that is recommended */
@@ -50,6 +56,7 @@ void ssd1306Init() {
     sendCommand(SSD1306_NORMAL_DISPLAY);                                /* Set Display in Normal Mode, 1 = ON, 0 = OFF */
     sendCommand(SSD1306_DISPLAY_ON);                                    /* Display on in normal mode */
 }
+
 //******************************************************************************************************************************************
 void sendCommand (unsigned char command) {
     data[0] = 0x00;
@@ -60,7 +67,8 @@ void sendCommand (unsigned char command) {
 //******************************************************************************************************************************************
 void sendData (unsigned char *params, unsigned char flag) {
     TI_transmit_field = params;
-    i2c_init ();
+    i2c_init();  //TODO figure out how to move to ssd1306Init(void) and only call once
+    //UCB2IE |= UCTXIE0 | UCNACKIE;           // transmit and NACK interrupt enable
     i2c_transmit (TI_transmit_field,flag);
 }
 //******************************************************************************************************************************************
@@ -70,7 +78,7 @@ void setCursor (unsigned char x, unsigned char p) {
     sendCommand(SSD1306_SET_PAGE_START_ADDRESS | p);
 }
 //******************************************************************************************************************************************
-void darwPixel (unsigned char x, unsigned char y, unsigned char clear) {
+void drawPixel (unsigned char x, unsigned char y, unsigned char clear) {
 
     if ((x >= SSD1306_WIDTH) || (y >= SSD1306_HEIGHT)) return;
     setCursor(x, y >> 3);
@@ -81,8 +89,9 @@ void darwPixel (unsigned char x, unsigned char y, unsigned char clear) {
         data[1] = ~(1 << (y & 7));
     sendData(data, 2);
 }
+
 //******************************************************************************************************************************************
-void fillDisplay(unsigned char param) {
+void fillDisplay(unsigned char color) {
   unsigned char page, x;
 
   dataBuffer = malloc(129);
@@ -90,7 +99,7 @@ void fillDisplay(unsigned char param) {
   for (page = 0; page < 8; page++) {
       setCursor(0, page);
     for (x = 0; x < 128; x++) {
-        dataBuffer[x + 1] = param;
+        dataBuffer[x + 1] = color;
     }
     sendData(dataBuffer, 129);
   }

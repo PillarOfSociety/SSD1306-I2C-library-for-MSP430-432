@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include "ssd1306_i2c_lib.h"
 
-#define SLAVE_ADDRESS   0x3C    //uint8_t SlaveAddress = 0x3C;
+#define SLAVE_ADDRESS   0x3C    //uint8_t SlaveAddress = 0x3C;  //TODO also defined in adddres.h
 
 uint8_t TXByteCtr;
 unsigned char *TI_transmit_field;
@@ -107,7 +107,7 @@ void __attribute__ ((interrupt(EUSCI_B2_VECTOR))) USCI_B2_ISR (void)
                }
                break;
            case USCI_I2C_UCBCNTIFG:            // Vector 26: BCNTIFG
-               P1OUT ^= BIT0;                  // Toggle LED on P1.0
+               //P1OUT ^= BIT0;                  // Toggle LED on P1.0
                break;
            case USCI_I2C_UCCLTOIFG: break;     // Vector 28: clock low timeout
            case USCI_I2C_UCBIT9IFG: break;     // Vector 30: 9th bit

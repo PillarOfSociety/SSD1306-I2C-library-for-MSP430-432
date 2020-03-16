@@ -73,10 +73,12 @@ void sendData (unsigned char *params, unsigned char flag) {
 }
 //******************************************************************************************************************************************
 void setCursor (unsigned char x, unsigned char p) {
+    //Note each Page p has two lines data written dictates line
     sendCommand(SSD1306_SET_LCOL_START_ADDRESS | (x & 0x0F));
     sendCommand(SSD1306_SET_HCOL_START_ADDRESS | (x >> 4));
     sendCommand(SSD1306_SET_PAGE_START_ADDRESS | p);
 }
+
 //******************************************************************************************************************************************
 void drawPixel (unsigned char x, unsigned char y, unsigned char clear) {
 
@@ -90,6 +92,26 @@ void drawPixel (unsigned char x, unsigned char y, unsigned char clear) {
     sendData(data, 2);
 }
 
+/***********************************************************
+ * void drawDot (unsigned char x, unsigned char y)
+ * Sets pixel as xy pos white.  Will clear rows above or below for a given line/page
+ ***********************************************************/
+void drawDot (unsigned char x, unsigned char y) {
+
+    if((x < SSD1306_WIDTH) && (y < SSD1306_HEIGHT))
+    {
+        setCursor(x, y/2);
+        data[0] = SSD1306_DATA_MODE;
+
+        if(y%2)
+            data[1] = 0x02;
+        else
+            data[1] = 0x20;
+
+        sendData(data, 2);
+    }
+}
+
 //******************************************************************************************************************************************
 void fillDisplay(unsigned char color) {
   unsigned char page, x;
@@ -98,8 +120,8 @@ void fillDisplay(unsigned char color) {
   dataBuffer[0] = SSD1306_DATA_MODE;
   for (page = 0; page < 8; page++) {
       setCursor(0, page);
-    for (x = 0; x < 128; x++) {
-        dataBuffer[x + 1] = color;
+    for (x = 1; x < 129; x++) {
+        dataBuffer[x] = color;
     }
     sendData(dataBuffer, 129);
   }

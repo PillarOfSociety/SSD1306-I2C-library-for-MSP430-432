@@ -10,7 +10,7 @@
 
 void msp430Example(void);
 
-
+void myDelay(void);
 
 
 #endif /* MSP430_SSD1306_EXAMPLE_H_ */

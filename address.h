@@ -9,7 +9,7 @@
 #define SSD1306_WIDTH                  128
 #define SSD1306_TALL_HEIGHT            64
 #define SSD1306_SHORT_HEIGHT           32
-#define SSD1306_HEIGHT                 SSD1306_TALL_HEIGHT //SSD1306_SHORT_HEIGHT --not sure but this breaks font //TODO change how this is set
+#define SSD1306_HEIGHT                 SSD1306_TALL_HEIGHT//SSD1306_SHORT_HEIGHT //--not sure but this breaks font //TODO change how this is set
 #define SSD1306_COMMAND_MODE           0x00
 #define SSD1306_DATA_MODE              0x40
 

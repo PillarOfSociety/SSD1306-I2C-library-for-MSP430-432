@@ -16,7 +16,14 @@ void ssd1306Init(void);
 void sendCommand (unsigned char command);
 void setCursor (unsigned char x, unsigned char p);
 void drawPixel (unsigned char x, unsigned char y, unsigned char clear);
+
+/***********************************************************
+ * void drawDot (unsigned char x, unsigned char y)
+ * Sets pixel as xy pos white.  Will clear rows above or below for a given line/page
+ * TODO DOESNT WORK RIGHT YET
+ ***********************************************************/
 void drawDot (unsigned char x, unsigned char y);
+
 /******************************************************************************************************************************************
  * void fillDisplay(unsigned char color)
  * Fills display with either black or white pixels
@@ -34,5 +41,14 @@ void draw6x8Str(unsigned char x, unsigned char p, const char str[],
                         unsigned char invert, unsigned char underline);
 void draw12x16Str(unsigned char x, unsigned char y, const char str[],
                           unsigned char invert);
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//new stuff for buffered writes
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+int ssd1306_buff_begin(int displayHeight,int displayWidth);
+void ssd1306_buff_end(void);
+void ssd1306_display(void);
+
 
 #endif /* SSD1306_LIB_H_ */

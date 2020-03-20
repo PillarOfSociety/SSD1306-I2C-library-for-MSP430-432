@@ -1,9 +1,11 @@
 /*****************************************************************************
  * Contains Command addresses for SSD1306 as well as some other useful defines
  *
- * Rev 1.0
+ * Rev 1.01
  ******************************************************************************/
-
+#define SSD1306_BLACK               0    ///< Draw 'off' pixels
+#define SSD1306_WHITE               1    ///< Draw 'on' pixels
+#define SSD1306_INVERSE             2    ///< Invert pixels
 
 #define SSD1306_ADDRESS                0x3C
 #define SSD1306_WIDTH                  128

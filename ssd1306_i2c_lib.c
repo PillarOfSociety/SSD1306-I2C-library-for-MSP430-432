@@ -4,7 +4,7 @@
  *
  * Handles low level I2C stuff for interfacing with Display
  *
- * Rev2.0
+ * Rev2.1
  */
 
 //******************************************************************************************************************************************
@@ -48,10 +48,8 @@ void i2c_init () {
 //******************************************************************************************************************************************
 void i2c_transmit (unsigned char *data, int dataLen) {
 
-    //__delay_cycles(1000);               // Delay between calls of this function so we dont overwrite previous transmissions //TODO is this needed since we sleep now?
-    i2c_init();  //TODO figure out how to move to ssd1306Init(void) and only call once
     TI_transmit_field = data;
-
+    UCB2CTLW0 &= ~UCSWRST;                  // clear reset register //new stuff so we dont have to call init everytime
     UCB2I2CSA = SSD1306_ADDRESS ;// configure slave address
     TXByteCtr = dataLen;                      // Load TX byte counter
     while (UCB2CTLW0 & UCTXSTP);        // Ensure stop condition got sent

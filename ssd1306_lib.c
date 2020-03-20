@@ -19,14 +19,15 @@
 #include "ssd1306_i2c_lib.h"    //use MSP430 version
 
 unsigned char data [2];
-unsigned char *dataBuffer;
+unsigned char *dataBuffer;      //used for direct writes
+unsigned char* displaybuffer = 0;  //used for buffered writes
 
-
+int Height,Width;
 
 //******************************************************************************************************************************************
 void ssd1306Init(void) {
 
-    //i2c_init(); //setup hardware interface
+    i2c_init(); //setup hardware interface
 
     sendCommand(SSD1306_DISPLAY_OFF);                                   /* Entire Display OFF */
     sendCommand(SSD1306_SET_DISPLAY_CLOCK_DIV);                         /* Set Display Clock Divide Ratio and Oscillator Frequency */
@@ -84,10 +85,7 @@ void drawPixel (unsigned char x, unsigned char y, unsigned char clear) {
     i2c_transmit(data, 2);
 }
 
-/***********************************************************
- * void drawDot (unsigned char x, unsigned char y)
- * Sets pixel as xy pos white.  Will clear rows above or below for a given line/page
- ***********************************************************/
+//******************************************************************************************************************************************
 void drawDot (unsigned char x, unsigned char y) {
 
     if((x < SSD1306_WIDTH) && (y < SSD1306_HEIGHT))
@@ -218,3 +216,35 @@ void draw12x16Str(unsigned char x, unsigned char y, const char str[],
   };
 }
 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//new stuff for buffered writes
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+int ssd1306_buff_begin(int displayHeight,int displayWidth)
+{
+    if(displaybuffer) //if already defined
+      return 1;
+
+    Height = displayHeight;
+    Width = displayWidth;
+
+    displaybuffer = (unsigned char *) malloc(displayWidth * ((displayHeight + 7) / 8)))
+
+    if (displaybuffer) // if can malloc
+        return 1;
+    else
+        return 0;
+}
+
+void ssd1306_buff_end(void)
+{
+    if(displaybuffer)
+    {
+        free(displaybuffer);
+        displaybuffer = 0;
+    }
+}
+
+void ssd1306_display(void)
+{
+    //write everything that is in buffer to display.
+}

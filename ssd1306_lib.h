@@ -14,7 +14,6 @@
 *******************************************************************************************************************************************/
 void ssd1306Init(void);
 void sendCommand (unsigned char command);
-void sendData (unsigned char params [], unsigned char flag);
 void setCursor (unsigned char x, unsigned char p);
 void drawPixel (unsigned char x, unsigned char y, unsigned char clear);
 void drawDot (unsigned char x, unsigned char y);

@@ -10,6 +10,7 @@
 //            |         SDA/P6.4|------->
 //            |         SCK/P6.5|------->
 //******************************************************************************************************************************************
+#if defined (__msp432p4xx__)        //untested
 #include "ti/devices/msp432p4xx/inc/msp.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -110,3 +111,5 @@ void EUSCIB1_IRQHandler(void) {
         }
     }
 }
+
+#endif

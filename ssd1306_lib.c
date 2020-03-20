@@ -10,17 +10,15 @@
 //#include "ti/devices/msp432p4xx/inc/msp.h"
 #include <msp430.h> //this should cover all MSP430s
 #include <stdio.h>
-#include <stdint.h>
+//#include <stdint.h>
 #include <stdlib.h>
 #include "address.h"
 #include "font6x8.h"
 #include "font12x16.h"
 #include "ssd1306_lib.h"
-#include "430_i2c_lib/ssd1306_i2c_lib.h"    //use MSP430 version
+#include "ssd1306_i2c_lib.h"    //use MSP430 version
 
-volatile uint32_t i;
 unsigned char data [2];
-unsigned char *TI_transmit_field;
 unsigned char *dataBuffer;
 
 
@@ -62,15 +60,9 @@ void sendCommand (unsigned char command) {
     data[0] = 0x00;
     data[1] = command;
 
-    sendData(data, 2);
+    i2c_transmit(data, 2);
 }
-//******************************************************************************************************************************************
-void sendData (unsigned char *params, unsigned char flag) {
-    TI_transmit_field = params;
-    i2c_init();  //TODO figure out how to move to ssd1306Init(void) and only call once
-    //UCB2IE |= UCTXIE0 | UCNACKIE;           // transmit and NACK interrupt enable
-    i2c_transmit (TI_transmit_field,flag);
-}
+
 //******************************************************************************************************************************************
 void setCursor (unsigned char x, unsigned char p) {
     //Note each Page p has two lines data written dictates line
@@ -89,7 +81,7 @@ void drawPixel (unsigned char x, unsigned char y, unsigned char clear) {
         data[1] = (1 << (y & 7));
     else
         data[1] = ~(1 << (y & 7));
-    sendData(data, 2);
+    i2c_transmit(data, 2);
 }
 
 /***********************************************************
@@ -108,7 +100,7 @@ void drawDot (unsigned char x, unsigned char y) {
         else
             data[1] = 0x20;
 
-        sendData(data, 2);
+        i2c_transmit(data, 2);
     }
 }
 
@@ -123,7 +115,7 @@ void fillDisplay(unsigned char color) {
     for (x = 1; x < 129; x++) {
         dataBuffer[x] = color;
     }
-    sendData(dataBuffer, 129);
+    i2c_transmit(dataBuffer, 129);
   }
   free(dataBuffer);
 }
@@ -168,7 +160,7 @@ void drawImage(unsigned char x, unsigned char y, unsigned char sx,
           dataBuffer[i - x + 1] = ~b;
       j++;
     }
-    sendData(dataBuffer, sx + 1); // send the buf to display
+    i2c_transmit(dataBuffer, sx + 1); // send the buf to display
   }
   free(dataBuffer);
 }
@@ -203,7 +195,7 @@ void draw6x8Str(unsigned char x, unsigned char p, const char str[],
       else
         buf[j + 1] = ~b;
     };
-    sendData(buf, FONT6X8_WIDTH + 1); // send the buf to display
+    i2c_transmit(buf, FONT6X8_WIDTH + 1); // send the buf to display
     x += FONT6X8_WIDTH;
     i++;
   };

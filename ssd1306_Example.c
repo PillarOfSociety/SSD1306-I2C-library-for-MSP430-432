@@ -5,6 +5,7 @@
  *      Author: AJS
  */
 #include <msp430.h>
+#include "address.h"
 #include <SSD1306_Driver/ssd1306_Example.h>
 #include "SSD1306_Driver/ssd1306_lib.h"
 
@@ -74,8 +75,18 @@ void msp430Example(void)
 
         myDelay();
         drawImage(100, 30, 28, 28, ti_logo, 1);
-        myDelay();
 
+        myDelay();
+        fillDisplay (FILL_Black);
+        ssd1306_buff_begin(SSD1306_SHORT_HEIGHT,SSD1306_WIDTH);
+        ssd1306_drawPixel(10, 10, SSD1306_WHITE);
+        ssd1306_drawPixel(10, 20, SSD1306_WHITE);
+        ssd1306_drawPixel(20, 20, SSD1306_WHITE);
+        ssd1306_drawPixel(20, 10, SSD1306_WHITE);
+        ssd1306_display();
+        ssd1306_buff_end();
+
+        myDelay();
     }
 }
 

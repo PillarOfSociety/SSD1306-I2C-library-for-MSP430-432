@@ -20,7 +20,9 @@
 
 unsigned char data [2];
 unsigned char *dataBuffer;      //used for direct writes
-unsigned char* displaybuffer = 0;  //used for buffered writes
+unsigned char * displayBuff_ptr = NULL;    //full buffer
+unsigned char* displaybuffer = NULL;  //used for data portion of buffered writes
+unsigned int displayBufLen;
 
 int Height,Width;
 
@@ -33,26 +35,27 @@ void ssd1306Init(void) {
     sendCommand(SSD1306_SET_DISPLAY_CLOCK_DIV);                         /* Set Display Clock Divide Ratio and Oscillator Frequency */
     sendCommand(0x80);                                                  /* Default Setting for Display Clock Divide Ratio and Oscillator Frequency that is recommended */
     sendCommand(SSD1306_SET_MULTIPLEX_RATIO);                           /* Set Multiplex Ratio */
-    sendCommand(0x3F);                                                  /* 64 COM lines */
+    sendCommand(SSD1306_HEIGHT-1);                                      /* 32 or 64 COM lines -1*/
     sendCommand(SSD1306_SET_DISPLAY_OFFSET);                            /* Set display offset */
     sendCommand(0x00);                                                  /* 0 offset */
     sendCommand(SSD1306_SET_START_LINE | 0x00);                         /* Set first line as the start line of the display */
     sendCommand(SSD1306_SET_CHARGE_PUMP);                               /* Charge pump */
-    sendCommand(0x14);                                                  /* Enable charge dump during display on */
+    sendCommand(0x14);                                                  /* Enable charge dump during display on */  //pretty sure it needs to be this for 3.3v
     sendCommand(SSD1306_MEMORY_ADDRESS_MODE);                           /* Set memory addressing mode */
     sendCommand(SSD1306_SET_LCOL_START_ADDRESS);                        /* Horizontal addressing mode */
     sendCommand(SSD1306_SEGMENT_REMAP | 0x01);                          /* Set segment remap with column address 127 mapped to segment 0 */
     sendCommand(SSD1306_COM_SCAN_INVERSE);                              /* Set com output scan direction, scan from com63 to com 0 */
     sendCommand(SSD1306_SET_COM_PINS_CONFIG);                           /* Set com pins hardware configuration */
-    sendCommand(0x12);                                                  /* Alternative com pin configuration, disable com left/right remap */
+    sendCommand(0x12);            //TODO investigate this 0x02 for 32 height      0x12 for 64                                /* Alternative com pin configuration, disable com left/right remap */
     sendCommand(SSD1306_SET_CONTRAST);                                  /* Set contrast control */
-    sendCommand(0x80);                                                  /* Set Contrast to 128 */
+    sendCommand(0x8F);                      //was 0x80                              /* Set Contrast to 128 */
     sendCommand(SSD1306_SET_PRECHARGE_PERIOD);                          /* Set pre-charge period */
     sendCommand(0xF1);                                                  /* Phase 1 period of 15 DCLK, Phase 2 period of 1 DCLK */
     sendCommand(SSD1306_SET_VCOM_DESELECT_LVL);                         /* Set Vcomh deselect level */
     sendCommand(0x40);                                                  /* Vcomh deselect level */
     sendCommand(SSD1306_ENTIRE_DISPLAY_RESUME);                         /* Entire display ON, resume to RAM content display */
     sendCommand(SSD1306_NORMAL_DISPLAY);                                /* Set Display in Normal Mode, 1 = ON, 0 = OFF */
+    //add deactivate scroll
     sendCommand(SSD1306_DISPLAY_ON);                                    /* Display on in normal mode */
 }
 
@@ -219,32 +222,90 @@ void draw12x16Str(unsigned char x, unsigned char y, const char str[],
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //new stuff for buffered writes
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-int ssd1306_buff_begin(int displayHeight,int displayWidth)
+unsigned char * ssd1306_buff_begin(int displayHeight,int displayWidth)
 {
-    if(displaybuffer) //if already defined
-      return 1;
+    if(displayBuff_ptr) //if already defined
+      return displaybuffer;
 
     Height = displayHeight;
     Width = displayWidth;
+    displayBufLen = displayWidth * ((displayHeight + 7) / 8);
 
-    displaybuffer = (unsigned char *) malloc(displayWidth * ((displayHeight + 7) / 8)))
+    displayBuff_ptr = (unsigned char *) malloc(displayBufLen+1); //add one for command
+    displaybuffer = displayBuff_ptr+1;  //create second pointer for data leave space for command
 
-    if (displaybuffer) // if can malloc
-        return 1;
+    if(displayBuff_ptr)
+    {
+        ssd1306_clearBuff();
+        return displaybuffer;
+    }
     else
-        return 0;
+        return NULL;    //Returns NULL if malloc didnt work.
 }
 
 void ssd1306_buff_end(void)
 {
-    if(displaybuffer)
+    if(displayBuff_ptr)
     {
-        free(displaybuffer);
-        displaybuffer = 0;
+        free(displayBuff_ptr);
+        displayBuff_ptr = NULL;
+        displaybuffer = NULL;
+    }
+}
+
+void ssd1306_clearBuff(void)
+{
+    unsigned char * ptr = displaybuffer;
+    int i;
+    for (i=0;i<displayBufLen;i++)
+    {
+        *ptr = 0x00;
+        ptr++;
     }
 }
 
 void ssd1306_display(void)
 {
+    //so some setup so we can dump the buffer to screen
+    sendCommand(SSD1306_SET_PAGE_ADDRESS );  //0x22
+    sendCommand(0);                        // Page start address
+    sendCommand(0xFF);                  // Page end (not really, but works here)
+    sendCommand(SSD1306_SET_COLUMN_ADDRESS);   //0x21  SSD1306_SET_COLUMN_ADDRESS
+    sendCommand(0);             // Column start address
+    sendCommand(Width - 1);     // Column end address
+
+    displayBuff_ptr[0] = SSD1306_DATA_MODE;
     //write everything that is in buffer to display.
+    i2c_transmit(displayBuff_ptr, displayBufLen+1);
 }
+void ssd1306_drawPixel(unsigned int x, unsigned int y, int color)
+{
+    if((x < Width) && (y < Height))
+    {
+      // Pixel is in-bounds. Rotate coordinates if needed.
+        /* adafruits comments on what the rotations mean sucks so I dont know whats what.
+      switch(getRotation())
+      {
+       case 1:
+        ssd1306_swap(x, y);
+        x = Width - x - 1;
+        break;
+       case 2:
+        x = Width  - x - 1;
+        y = HEIGHT - y - 1;
+        break;
+       case 3:
+        ssd1306_swap(x, y);
+        y = HEIGHT - y - 1;
+        break;
+      }
+      */
+      switch(color)
+      {
+       case SSD1306_WHITE:   displaybuffer[x + (y/8)*Width] |=  (1 << (y&7)); break;
+       case SSD1306_BLACK:   displaybuffer[x + (y/8)*Width] &= ~(1 << (y&7)); break;
+       case SSD1306_INVERSE: displaybuffer[x + (y/8)*Width] ^=  (1 << (y&7)); break;
+      }
+    }
+}
+

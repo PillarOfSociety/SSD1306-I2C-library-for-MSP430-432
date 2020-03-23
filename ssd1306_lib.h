@@ -46,9 +46,14 @@ void draw12x16Str(unsigned char x, unsigned char y, const char str[],
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //new stuff for buffered writes
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-int ssd1306_buff_begin(int displayHeight,int displayWidth);
+unsigned char * ssd1306_buff_begin(int displayHeight,int displayWidth);
+void ssd1306_clearBuff(void);
 void ssd1306_buff_end(void);
 void ssd1306_display(void);
-
+void ssd1306_drawPixel(unsigned int x, unsigned int y, int color);
 
 #endif /* SSD1306_LIB_H_ */
+
+
+
+

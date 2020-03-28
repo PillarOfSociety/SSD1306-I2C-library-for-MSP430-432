@@ -12,6 +12,7 @@
 #if defined (__MSP430FR5994__)
 void msp430Example(void)
 {
+    int i;
     const unsigned char ti_logo[] = {
     //   0     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0x80, 0x00, 0x00, 0x80, 0x98, 0x08, 0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x00,
@@ -47,7 +48,7 @@ void msp430Example(void)
         fillDisplay (FILL_Black);    //clears screen
 
 
-
+/*
         drawPixel (20, 1, 0x22);
         drawPixel (20, 2, 0x22);
 
@@ -72,19 +73,28 @@ void msp430Example(void)
         //drawPixel (0, 1, 0);
         //drawPixel (0, 32, 0);
         //drawPixel (128, 32, 0);
-
+*/
         myDelay();
         drawImage(100, 30, 28, 28, ti_logo, 1);
 
-        myDelay();
-        fillDisplay (FILL_Black);
+
+            myDelay();
+            fillDisplay (FILL_Black);
+            ssd1306_test(); //should just fill one line
+
+        /*
         ssd1306_buff_begin(SSD1306_SHORT_HEIGHT,SSD1306_WIDTH);
         ssd1306_drawPixel(10, 10, SSD1306_WHITE);
         ssd1306_drawPixel(10, 20, SSD1306_WHITE);
         ssd1306_drawPixel(20, 20, SSD1306_WHITE);
         ssd1306_drawPixel(20, 10, SSD1306_WHITE);
-        ssd1306_display();
+        ssd1306_display();      //this turns everything upside down and backwards preminent
+        //myDelay();
+        //ssd1306_fillBuff();
+        //ssd1306_display();
+        //myDelay();
         ssd1306_buff_end();
+        */
 
         myDelay();
     }

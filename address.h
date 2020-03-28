@@ -42,3 +42,10 @@
 #define SSD1306_NOP                    0xE3
 #define SSD1306_SET_CHARGE_PUMP        0x8D
 
+#define SSD1306_RIGHT_HORIZONTAL_SCROLL              0x26 ///< Init rt scroll
+#define SSD1306_LEFT_HORIZONTAL_SCROLL               0x27 ///< Init left scroll
+#define SSD1306_VERTICAL_AND_RIGHT_HORIZONTAL_SCROLL 0x29 ///< Init diag scroll
+#define SSD1306_VERTICAL_AND_LEFT_HORIZONTAL_SCROLL  0x2A ///< Init diag scroll
+#define SSD1306_DEACTIVATE_SCROLL                    0x2E ///< Stop scroll
+#define SSD1306_ACTIVATE_SCROLL                      0x2F ///< Start scroll
+#define SSD1306_SET_VERTICAL_SCROLL_AREA             0xA3 ///< Set scroll range

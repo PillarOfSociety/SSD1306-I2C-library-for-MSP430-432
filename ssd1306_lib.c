@@ -46,7 +46,7 @@ void ssd1306Init(void) {
     sendCommand(SSD1306_SEGMENT_REMAP | 0x01);                          /* Set segment remap with column address 127 mapped to segment 0 */
     sendCommand(SSD1306_COM_SCAN_INVERSE);                              /* Set com output scan direction, scan from com63 to com 0 */
     sendCommand(SSD1306_SET_COM_PINS_CONFIG);                           /* Set com pins hardware configuration */
-    sendCommand(0x12);            //TODO investigate this 0x02 for 32 height      0x12 for 64                                /* Alternative com pin configuration, disable com left/right remap */
+    sendCommand(0x12);//0x12);            //TODO investigate this 0x02 for 32 height      0x12 for 64  //0x02 make everything seem zoomed but still wrong                          /* Alternative com pin configuration, disable com left/right remap */
     sendCommand(SSD1306_SET_CONTRAST);                                  /* Set contrast control */
     sendCommand(0x8F);                      //was 0x80                              /* Set Contrast to 128 */
     sendCommand(SSD1306_SET_PRECHARGE_PERIOD);                          /* Set pre-charge period */
@@ -55,7 +55,7 @@ void ssd1306Init(void) {
     sendCommand(0x40);                                                  /* Vcomh deselect level */
     sendCommand(SSD1306_ENTIRE_DISPLAY_RESUME);                         /* Entire display ON, resume to RAM content display */
     sendCommand(SSD1306_NORMAL_DISPLAY);                                /* Set Display in Normal Mode, 1 = ON, 0 = OFF */
-    //add deactivate scroll
+    //sendCommand(SSD1306_DEACTIVATE_SCROLL);//add deactivate scroll //doesnt seem to change anything
     sendCommand(SSD1306_DISPLAY_ON);                                    /* Display on in normal mode */
 }
 
@@ -263,6 +263,41 @@ void ssd1306_clearBuff(void)
         ptr++;
     }
 }
+void ssd1306_test(void) // int color, unsigned char y) //mostly just a test
+{
+    //try to use fill with just one line?
+    unsigned char page, x;
+
+    dataBuffer = malloc(135);
+    dataBuffer[0] = SSD1306_DATA_MODE;
+
+      setCursor(0, 1);  //was (0,page)
+      for (x = 1; x < 129; x++)
+      {
+          dataBuffer[x] = 0xCF; //00110011  ( 4 lines per page,  (line4,line3,line2,line1) so 11000011 should be line 4 and 1
+      }
+
+      i2c_transmit(dataBuffer, 129);
+
+      setCursor(0, 4);  //was (0,page)
+
+      for (x = 1; x < 129; x++)
+      {
+          dataBuffer[x] = 0xC3; //00110011  ( 4 lines per page,  (line4,line3,line2,line1) so 11000011 should be line 4 and 1
+      }
+      i2c_transmit(dataBuffer, 129);
+
+      setCursor(0, 6);  //was (0,page)
+      for (x = 1; x < 135; x++)
+      {
+          dataBuffer[x] = 0xC3; //00110011  ( 4 lines per page,  (line4,line3,line2,line1) so 11000011 should be line 4 and 1
+      }
+      i2c_transmit(dataBuffer, 135);
+
+    free(dataBuffer);
+}
+
+
 
 void ssd1306_display(void)
 {
@@ -278,6 +313,8 @@ void ssd1306_display(void)
     //write everything that is in buffer to display.
     i2c_transmit(displayBuff_ptr, displayBufLen+1);
 }
+
+
 void ssd1306_drawPixel(unsigned int x, unsigned int y, int color)
 {
     if((x < Width) && (y < Height))
@@ -291,8 +328,10 @@ void ssd1306_drawPixel(unsigned int x, unsigned int y, int color)
         x = Width - x - 1;
         break;
        case 2:
+       */
         x = Width  - x - 1;
-        y = HEIGHT - y - 1;
+        y = Height - y - 1;
+        /*
         break;
        case 3:
         ssd1306_swap(x, y);

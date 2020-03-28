@@ -52,6 +52,8 @@ void ssd1306_buff_end(void);
 void ssd1306_display(void);
 void ssd1306_drawPixel(unsigned int x, unsigned int y, int color);
 
+void ssd1306_test(void);//int color, unsigned char y);
+
 #endif /* SSD1306_LIB_H_ */
 
 

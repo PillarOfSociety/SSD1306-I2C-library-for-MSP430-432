@@ -18,15 +18,19 @@
 #include "ssd1306_lib.h"
 #include "ssd1306_i2c_lib.h"    //use MSP430 version
 
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~GLOBALS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 unsigned char data [2];
-unsigned char *dataBuffer;      //used for direct writes
+unsigned char *dataBuffer;      //used for direct writes //so array persists during interrupt driven TX.
+
 unsigned char * displayBuff_ptr = NULL;    //full buffer
 unsigned char* displaybuffer = NULL;  //used for data portion of buffered writes
 unsigned int displayBufLen;
 
 int Height,Width;
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-//******************************************************************************************************************************************
+
 void ssd1306Init(void) {
 
     i2c_init(); //setup hardware interface
@@ -59,7 +63,6 @@ void ssd1306Init(void) {
     sendCommand(SSD1306_DISPLAY_ON);                                    /* Display on in normal mode */
 }
 
-//******************************************************************************************************************************************
 void sendCommand (unsigned char command) {
     data[0] = 0x00;
     data[1] = command;
@@ -67,7 +70,11 @@ void sendCommand (unsigned char command) {
     i2c_transmit(data, 2);
 }
 
-//******************************************************************************************************************************************
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//For Direct writes
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 void setCursor (unsigned char x, unsigned char p) {
     //Note each Page p has two lines data written dictates line
     sendCommand(SSD1306_SET_LCOL_START_ADDRESS | (x & 0x0F));
@@ -75,9 +82,10 @@ void setCursor (unsigned char x, unsigned char p) {
     sendCommand(SSD1306_SET_PAGE_START_ADDRESS | p);
 }
 
-//******************************************************************************************************************************************
 void drawPixel (unsigned char x, unsigned char y, unsigned char clear) {
 
+
+    //Im not convinced this i right
     if ((x >= SSD1306_WIDTH) || (y >= SSD1306_HEIGHT)) return;
     setCursor(x, y >> 3);
     data[0] = SSD1306_DATA_MODE;
@@ -88,24 +96,56 @@ void drawPixel (unsigned char x, unsigned char y, unsigned char clear) {
     i2c_transmit(data, 2);
 }
 
-//******************************************************************************************************************************************
-void drawDot (unsigned char x, unsigned char y) {
+void drawDot (unsigned char x, unsigned char y)
+{
 
+    //( 4 lines per page,  (line4,line3,line2,line1) so 11000011 should be line 4 and 1
     if((x < SSD1306_WIDTH) && (y < SSD1306_HEIGHT))
     {
-        setCursor(x, y/2);
+        setCursor(x, (y-1)/4);
         data[0] = SSD1306_DATA_MODE;
-
-        if(y%2)
-            data[1] = 0x02;
-        else
-            data[1] = 0x20;
+        data[1] = 0x03<<(y%4);
 
         i2c_transmit(data, 2);
     }
 }
 
-//******************************************************************************************************************************************
+void drawHLine(int x, int y, int lineLen)
+{
+    if((y >= 0) && (y < SSD1306_HEIGHT)) // Y coord in bounds?
+    {
+        if(x < 0)  // Clip left
+        {
+            lineLen += x;
+            x  = 0;
+        }
+
+        if((x + lineLen) > SSD1306_WIDTH) // Clip right
+        {
+            lineLen = (SSD1306_WIDTH - x);
+        }
+
+        if(lineLen > 0)  // Proceed only if line is at least 1 pixel
+        {
+            int bufflen = lineLen+1;
+            unsigned char line;
+
+            dataBuffer = malloc(bufflen);
+            dataBuffer[0] = SSD1306_DATA_MODE;
+
+            line = 0x03<<(y%4);
+            while(lineLen--)
+            {
+                *(dataBuffer + lineLen+1) = line;
+            }
+
+            setCursor(x, (y-1)/4);  //should be x then y page (4 lines per page)
+            i2c_transmit(dataBuffer, bufflen);
+            free(dataBuffer);
+        }
+    }
+}
+
 void fillDisplay(unsigned char color) {
   unsigned char page, x;
 
@@ -120,7 +160,7 @@ void fillDisplay(unsigned char color) {
   }
   free(dataBuffer);
 }
-//******************************************************************************************************************************************
+
 void drawImage(unsigned char x, unsigned char y, unsigned char sx,
                        unsigned char sy, const unsigned char img[],
                        unsigned char invert) {
@@ -165,7 +205,7 @@ void drawImage(unsigned char x, unsigned char y, unsigned char sx,
   }
   free(dataBuffer);
 }
-//******************************************************************************************************************************************
+
 void draw6x8Str(unsigned char x, unsigned char p, const char str[],
                         unsigned char invert, unsigned char underline) {
   unsigned char i, j, b, buf[FONT6X8_WIDTH + 1];
@@ -201,7 +241,7 @@ void draw6x8Str(unsigned char x, unsigned char p, const char str[],
     i++;
   };
 }
-//******************************************************************************************************************************************
+
 void draw12x16Str(unsigned char x, unsigned char y, const char str[],
                           unsigned char invert) {
   unsigned char i;
@@ -220,8 +260,13 @@ void draw12x16Str(unsigned char x, unsigned char y, const char str[],
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//new stuff for buffered writes
+//For Buffered writes
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/*  WARNING do use this requires a heap of 1k (or a global array in place of malloc()) --CCS doest give us a heap that big by default
+ * So this isnt going to work on on a MCU with small RAM.
+ */
+//GAVE UP ON THIS SINCE IM NOT SURE I NEED IT ANYWAY... and way it is written it probably wont work for 64pixel version
+
 unsigned char * ssd1306_buff_begin(int displayHeight,int displayWidth)
 {
     if(displayBuff_ptr) //if already defined
@@ -229,7 +274,7 @@ unsigned char * ssd1306_buff_begin(int displayHeight,int displayWidth)
 
     Height = displayHeight;
     Width = displayWidth;
-    displayBufLen = displayWidth * ((displayHeight + 7) / 8);
+    displayBufLen = displayWidth * 8;  //I think whether its 32 or 64 high there is always 8pages
 
     displayBuff_ptr = (unsigned char *) malloc(displayBufLen+1); //add one for command
     displaybuffer = displayBuff_ptr+1;  //create second pointer for data leave space for command
@@ -263,88 +308,63 @@ void ssd1306_clearBuff(void)
         ptr++;
     }
 }
-void ssd1306_test(void) // int color, unsigned char y) //mostly just a test
+
+void ssd1306_fillBuff(void)
 {
-    //try to use fill with just one line?
-    unsigned char page, x;
-
-    dataBuffer = malloc(135);
-    dataBuffer[0] = SSD1306_DATA_MODE;
-
-      setCursor(0, 1);  //was (0,page)
-      for (x = 1; x < 129; x++)
-      {
-          dataBuffer[x] = 0xCF; //00110011  ( 4 lines per page,  (line4,line3,line2,line1) so 11000011 should be line 4 and 1
-      }
-
-      i2c_transmit(dataBuffer, 129);
-
-      setCursor(0, 4);  //was (0,page)
-
-      for (x = 1; x < 129; x++)
-      {
-          dataBuffer[x] = 0xC3; //00110011  ( 4 lines per page,  (line4,line3,line2,line1) so 11000011 should be line 4 and 1
-      }
-      i2c_transmit(dataBuffer, 129);
-
-      setCursor(0, 6);  //was (0,page)
-      for (x = 1; x < 135; x++)
-      {
-          dataBuffer[x] = 0xC3; //00110011  ( 4 lines per page,  (line4,line3,line2,line1) so 11000011 should be line 4 and 1
-      }
-      i2c_transmit(dataBuffer, 135);
-
-    free(dataBuffer);
+    unsigned char * ptr = displaybuffer;
+    int i;
+    for (i=0;i<displayBufLen;i++)
+    {
+        *ptr = 0xFF;
+        ptr++;
+    }
 }
 
-
-
-void ssd1306_display(void)
+void ssd1306_UpdateDisplay(void)
 {
-    //so some setup so we can dump the buffer to screen
-    sendCommand(SSD1306_SET_PAGE_ADDRESS );  //0x22
-    sendCommand(0);                        // Page start address
-    sendCommand(0xFF);                  // Page end (not really, but works here)
-    sendCommand(SSD1306_SET_COLUMN_ADDRESS);   //0x21  SSD1306_SET_COLUMN_ADDRESS
-    sendCommand(0);             // Column start address
-    sendCommand(Width - 1);     // Column end address
+    *(displayBuff_ptr) = SSD1306_DATA_MODE;
 
-    displayBuff_ptr[0] = SSD1306_DATA_MODE;
-    //write everything that is in buffer to display.
-    i2c_transmit(displayBuff_ptr, displayBufLen+1);
+    setCursor(0, 0);  //was (0,page)
+
+    i2c_transmit(dataBuffer, displayBufLen+1);
 }
-
 
 void ssd1306_drawPixel(unsigned int x, unsigned int y, int color)
 {
     if((x < Width) && (y < Height))
     {
-      // Pixel is in-bounds. Rotate coordinates if needed.
-        /* adafruits comments on what the rotations mean sucks so I dont know whats what.
-      switch(getRotation())
-      {
-       case 1:
-        ssd1306_swap(x, y);
-        x = Width - x - 1;
-        break;
-       case 2:
-       */
-        x = Width  - x - 1;
-        y = Height - y - 1;
-        /*
-        break;
-       case 3:
-        ssd1306_swap(x, y);
-        y = HEIGHT - y - 1;
-        break;
-      }
-      */
+        int page = (y-1)/4;
+        unsigned char line = 0x03<<(y%4);
       switch(color)
       {
-       case SSD1306_WHITE:   displaybuffer[x + (y/8)*Width] |=  (1 << (y&7)); break;
-       case SSD1306_BLACK:   displaybuffer[x + (y/8)*Width] &= ~(1 << (y&7)); break;
-       case SSD1306_INVERSE: displaybuffer[x + (y/8)*Width] ^=  (1 << (y&7)); break;
+       case SSD1306_WHITE:   displaybuffer[x + page*Width] |=  line; break;
+       case SSD1306_BLACK:   displaybuffer[x + page*Width] &= ~line; break;
+       case SSD1306_INVERSE: displaybuffer[x + page*Width] ^=  line; break;
       }
     }
 }
+
+//drawFastHLineInternal(
+//  int16_t x, int16_t y, int16_t w, uint16_t color) {
+//
+//  if((y >= 0) && (y < HEIGHT)) { // Y coord in bounds?
+//    if(x < 0) { // Clip left
+//      w += x;
+//      x  = 0;
+//    }
+//    if((x + w) > WIDTH) { // Clip right
+//      w = (WIDTH - x);
+//    }
+//    if(w > 0) { // Proceed only if width is positive
+//      uint8_t *pBuf = &buffer[(y / 8) * WIDTH + x],
+//               mask = 1 << (y & 7);
+//      switch(color) {
+//       case SSD1306_WHITE:               while(w--) { *pBuf++ |= mask; }; break;
+//       case SSD1306_BLACK: mask = ~mask; while(w--) { *pBuf++ &= mask; }; break;
+//       case SSD1306_INVERSE:             while(w--) { *pBuf++ ^= mask; }; break;
+//      }
+//    }
+//  }
+//}
+
 

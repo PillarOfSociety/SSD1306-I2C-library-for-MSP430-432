@@ -47,54 +47,58 @@ void msp430Example(void)
         myDelay();
         fillDisplay (FILL_Black);    //clears screen
 
-
-/*
-        drawPixel (20, 1, 0x22);
-        drawPixel (20, 2, 0x22);
-
-        //should make a square
-        drawDot (120, 0);
-        drawDot (120, 2);
-        drawDot (121, 0);
-        drawDot (121, 2);
-
-        //should make a square
-        drawDot (60, 1);
-        drawDot (60, 3);
-        drawDot (60, 1);
-        drawDot (60, 3);
-
-        //drawPixel (0, 2, 0x03);
-        drawPixel (0, 3, 0x03);
-
-        drawPixel (0, 7, 0x03); //beginning
-        drawPixel (63, 7, 0x03);    //middle
-        drawPixel (127, 7, 0x03);   //end
-        //drawPixel (0, 1, 0);
-        //drawPixel (0, 32, 0);
-        //drawPixel (128, 32, 0);
-*/
         myDelay();
         drawImage(100, 30, 28, 28, ti_logo, 1);
 
+        myDelay();
+        fillDisplay (FILL_Black);
+        //drawHLine(5, 3, 10);  //will be overwritten by "beginning" line below
+        drawHLine(5, 6, 10);
+        drawHLine(5, 12, 10);
+
+        drawHLine(0, 0, 100); //beginning
+        drawHLine(30, 31, 100); //end
+
+        myDelay();
+        fillDisplay (FILL_Black);
+
+        //should make a square
+        drawDot (120, 0);
+        drawDot (120, 5);
+        drawDot (125, 0);
+        drawDot (125, 5);
+
+        //myDelay();
+        //fillDisplay (FILL_Black);
+        //ssd1306_test();
+
+        myDelay();
+        fillDisplay (FILL_Black);    //clears screen
+
+        //Try stuff with buffer
+        if(ssd1306_buff_begin(SSD1306_SHORT_HEIGHT,SSD1306_WIDTH)==0) //check that memory could be allocated
+        {
+            draw12x16Str(30, 10, "ERROR", 1); //Need to make heap +1k in project settings
+        }
+        else
+        {
+            ssd1306_drawPixel(10, 10, SSD1306_WHITE);
+            ssd1306_drawPixel(10, 20, SSD1306_WHITE);
+            ssd1306_drawPixel(20, 20, SSD1306_WHITE);
+            ssd1306_drawPixel(20, 10, SSD1306_WHITE);
+            ssd1306_UpdateDisplay();     //this turns everything upside down and backwards preminent
+            myDelay();
+
+            ssd1306_clearBuff();
+            ssd1306_UpdateDisplay(); //should clear display
 
             myDelay();
-            fillDisplay (FILL_Black);
-            ssd1306_test(); //should just fill one line
 
-        /*
-        ssd1306_buff_begin(SSD1306_SHORT_HEIGHT,SSD1306_WIDTH);
-        ssd1306_drawPixel(10, 10, SSD1306_WHITE);
-        ssd1306_drawPixel(10, 20, SSD1306_WHITE);
-        ssd1306_drawPixel(20, 20, SSD1306_WHITE);
-        ssd1306_drawPixel(20, 10, SSD1306_WHITE);
-        ssd1306_display();      //this turns everything upside down and backwards preminent
-        //myDelay();
-        //ssd1306_fillBuff();
-        //ssd1306_display();
-        //myDelay();
-        ssd1306_buff_end();
-        */
+            ssd1306_fillBuff(); //should turn it all white
+            ssd1306_UpdateDisplay();
+
+            ssd1306_buff_end();
+        }
 
         myDelay();
     }

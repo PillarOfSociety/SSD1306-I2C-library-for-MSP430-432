@@ -24,6 +24,13 @@ void drawPixel (unsigned char x, unsigned char y, unsigned char clear);
  ***********************************************************/
 void drawDot (unsigned char x, unsigned char y);
 
+/***********************************************************
+ * void drawDot (unsigned char x, unsigned char y)
+ * draws a horizontal line of pixel length lineLen
+ * Will overwrite all other lines in page
+ ***********************************************************/
+void drawHLine(int x, int y, int lineLen);
+
 /******************************************************************************************************************************************
  * void fillDisplay(unsigned char color)
  * Fills display with either black or white pixels
@@ -48,11 +55,14 @@ void draw12x16Str(unsigned char x, unsigned char y, const char str[],
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 unsigned char * ssd1306_buff_begin(int displayHeight,int displayWidth);
 void ssd1306_clearBuff(void);
+void ssd1306_fillBuff(void);
 void ssd1306_buff_end(void);
 void ssd1306_display(void);
 void ssd1306_drawPixel(unsigned int x, unsigned int y, int color);
 
-void ssd1306_test(void);//int color, unsigned char y);
+void ssd1306_UpdateDisplay(void);
+
+void ssd1306_test(void);    //int color, unsigned char y);
 
 #endif /* SSD1306_LIB_H_ */
 

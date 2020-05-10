@@ -10,11 +10,11 @@
 //#include "ti/devices/msp432p4xx/inc/msp.h"
 #include <msp430.h> //this should cover all MSP430s
 #include <stdio.h>
-//#include <stdint.h>
 #include <stdlib.h>
 #include "address.h"
 #include "font6x8.h"
 #include "font12x16.h"
+#include "bigNumbers.h"
 #include "ssd1306_lib.h"
 #include "ssd1306_i2c_lib.h"    //use MSP430 version
 
@@ -50,9 +50,12 @@ void ssd1306Init(void) {
     sendCommand(SSD1306_SEGMENT_REMAP | 0x01);                          /* Set segment remap with column address 127 mapped to segment 0 */
     sendCommand(SSD1306_COM_SCAN_INVERSE);                              /* Set com output scan direction, scan from com63 to com 0 */
     sendCommand(SSD1306_SET_COM_PINS_CONFIG);                           /* Set com pins hardware configuration */
-    sendCommand(0x12);//0x12);            //TODO investigate this 0x02 for 32 height      0x12 for 64  //0x02 make everything seem zoomed but still wrong                          /* Alternative com pin configuration, disable com left/right remap */
+    if(SSD1306_HEIGHT==32)
+        sendCommand(0x02);            //this 0x02 for 32 height         /* Alternative com pin configuration, disable com left/right remap */
+    else
+        sendCommand(0x12); //for 64 height
     sendCommand(SSD1306_SET_CONTRAST);                                  /* Set contrast control */
-    sendCommand(0x8F);                      //was 0x80                              /* Set Contrast to 128 */
+    sendCommand(0x80);                      //was 0x80                  /* Set Contrast to 128 (8F = 128 =  is highest)*/
     sendCommand(SSD1306_SET_PRECHARGE_PERIOD);                          /* Set pre-charge period */
     sendCommand(0xF1);                                                  /* Phase 1 period of 15 DCLK, Phase 2 period of 1 DCLK */
     sendCommand(SSD1306_SET_VCOM_DESELECT_LVL);                         /* Set Vcomh deselect level */
@@ -242,21 +245,36 @@ void draw6x8Str(unsigned char x, unsigned char p, const char str[],
   };
 }
 
-void draw12x16Str(unsigned char x, unsigned char y, const char str[],
-                          unsigned char invert) {
+void draw12x16Str(unsigned char x, unsigned char y, const char str[],unsigned char invert)
+{
   unsigned char i;
   unsigned int c;
 
   i = 0;
-  while (str[i] != '\0') {
+  while (str[i] != '\0')
+  {
     if (str[i] > 191)
       c = (str[i] - 64) * FONT12X16_WIDTH * 2;
     else
       c = str[i] * FONT12X16_WIDTH * 2;
+
     drawImage(x, y, 12, 16, (unsigned char *) &font12x16[c], invert);
     i++;
     x += 12;
   };
+}
+
+void draw15x24Number(unsigned char x, unsigned char y, int number,unsigned char invert)
+{
+    if(number>0 && number <10)
+        drawImage(x, y, 15, 24, bigNumbers[number] , invert);
+    else
+        drawImage(x, y, 15, 24, space, invert);
+}
+
+void draw6x24Period(unsigned char x, unsigned char y,  unsigned char invert)
+{
+    drawImage(x, y, 6, 24, period , invert);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -265,7 +283,7 @@ void draw12x16Str(unsigned char x, unsigned char y, const char str[],
 /*  WARNING do use this requires a heap of 1k (or a global array in place of malloc()) --CCS doest give us a heap that big by default
  * So this isnt going to work on on a MCU with small RAM.
  */
-//GAVE UP ON THIS SINCE IM NOT SURE I NEED IT ANYWAY... and way it is written it probably wont work for 64pixel version
+//GAVE UP ON THIS SINCE IM NOT SURE I NEED IT ANYWAY... and way it is written it probably wont work for 32pixel version
 
 unsigned char * ssd1306_buff_begin(int displayHeight,int displayWidth)
 {

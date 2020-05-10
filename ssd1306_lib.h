@@ -42,14 +42,11 @@ void drawHLine(int x, int y, int lineLen);
  *****************************************************************************************************************************************/
 void fillDisplay(unsigned char color);
 void drawImage(unsigned char x, unsigned char y, unsigned char sx,
-                       unsigned char sy, const unsigned char img[],
-                       unsigned char invert);
-void draw6x8Str(unsigned char x, unsigned char p, const char str[],
-                        unsigned char invert, unsigned char underline);
-void draw12x16Str(unsigned char x, unsigned char y, const char str[],
-                          unsigned char invert);
-
-
+                       unsigned char sy, const unsigned char img[],unsigned char invert);
+void draw6x8Str(unsigned char x, unsigned char p, const char str[], unsigned char invert, unsigned char underline);
+void draw12x16Str(unsigned char x, unsigned char y, const char str[],unsigned char invert);
+void draw15x24Number(unsigned char x, unsigned char y, int number,unsigned char invert);
+void draw6x24Period(unsigned char x, unsigned char y,  unsigned char invert);
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //new stuff for buffered writes
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

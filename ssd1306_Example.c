@@ -37,8 +37,8 @@ void msp430Example(void)
 
         fillDisplay (FILL_Black);    //clears screen
         //draw6x8Str(0, 3, "Hello", 1, 0);  //currently too small on 32 height screen
-        draw12x16Str(0, 3, "Hello", 1);
-        draw12x16Str(0, 22, "World", 1);  //previous line font height +3 for spacing
+        draw6x8Str(5, 0, "Hello", 1, 0);;
+        draw12x16Str(20, 12, "World", 1);
 
         myDelay();
 
@@ -48,8 +48,13 @@ void msp430Example(void)
         fillDisplay (FILL_Black);    //clears screen
 
         myDelay();
-        drawImage(100, 30, 28, 28, ti_logo, 1);
+        drawImage(100, 3, 28, 28, ti_logo, 1);
 
+        myDelay();
+        draw6x8Str(5, 0, "Count", 1,0);
+        draw15x24Number(20, 8, 4,1);
+
+        /*
         myDelay();
         fillDisplay (FILL_Black);
         //drawHLine(5, 3, 10);  //will be overwritten by "beginning" line below
@@ -99,7 +104,7 @@ void msp430Example(void)
 
             ssd1306_buff_end();
         }
-
+*/
         myDelay();
     }
 }
